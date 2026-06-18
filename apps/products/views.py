@@ -225,12 +225,12 @@ class TagDetailView(APIView):
 
 # Product helper
 def apply_product_filters(queryset, request):
-    """Apply common filters to product queryset from request query params."""
     brand_slug = request.query_params.get("brand")
     category_slug = request.query_params.get("category")
     search = request.query_params.get("search")
     sort = request.query_params.get("sort")
     in_stock = request.query_params.get("in_stock")
+    status = request.query_params.get("status")
 
     if brand_slug:
         queryset = queryset.filter(brand__slug=brand_slug)
@@ -242,6 +242,12 @@ def apply_product_filters(queryset, request):
         )
     if in_stock is not None:
         queryset = queryset.filter(in_stock=in_stock.lower() == "true")
+
+    # Show only active by default, status=false shows inactive
+    if status is not None:
+        queryset = queryset.filter(status=status.lower() == "true")
+    else:
+        queryset = queryset.filter(status=True)
 
     if sort == "price_low":
         queryset = queryset.order_by("discounted_price")

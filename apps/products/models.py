@@ -140,6 +140,7 @@ class Product(TimeStampedModel):
 
     # Stock
     in_stock = models.BooleanField(default=True, db_index=True)
+    status = models.BooleanField(default=True, db_index=True)
 
     # Key details
     key_detail_title = models.CharField(max_length=500, blank=True, null=True)

@@ -35,8 +35,8 @@ class ProductImageInline(admin.TabularInline):
 # Product admin
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
-    list_display = ["name", "slug", "brand", "category", "price", "discount_amount", "discounted_price", "in_stock", "is_hot_deal"]
-    list_filter = ["brand", "category", "in_stock", "is_hot_deal"]
+    list_display = ["name", "slug", "brand", "category", "price", "discount_amount", "discounted_price", "in_stock", "status", "is_hot_deal"]
+    list_filter = ["brand", "category", "in_stock", "is_hot_deal", "status"]
     search_fields = ["name", "slug", "sku"]
     readonly_fields = ["slug", "discounted_price", "created_at", "updated_at"]
     inlines = [ProductImageInline]

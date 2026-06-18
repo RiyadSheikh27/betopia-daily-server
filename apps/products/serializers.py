@@ -79,6 +79,7 @@ class ProductListSerializer(serializers.ModelSerializer):
             "first_image",
             "in_stock",
             "is_hot_deal",
+            "status",
             "brand_name",
             "brand_slug",
             "category_name",
@@ -121,6 +122,7 @@ class ProductDetailSerializer(serializers.ModelSerializer):
             "key_detail_title",
             "key_detail_description",
             "is_hot_deal",
+            "status",
             "hot_deal_start",
             "hot_deal_end",
             "total_sold",
@@ -139,6 +141,7 @@ class ProductWriteSerializer(serializers.ModelSerializer):
     tag_ids = serializers.ListField(
         child=serializers.UUIDField(), write_only=True, required=False
     )
+    description = serializers.CharField(required=False, allow_blank=True, allow_null=True)
 
     class Meta:
         model = Product
@@ -156,6 +159,7 @@ class ProductWriteSerializer(serializers.ModelSerializer):
             "key_detail_title",
             "key_detail_description",
             "is_hot_deal",
+            "status",
             "hot_deal_start",
             "hot_deal_end",
         ]
