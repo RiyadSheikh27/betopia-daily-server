@@ -49,13 +49,14 @@ class OrderListCreateView(APIView):
 
         orders = (
             Order.objects.filter(user=profile)
+            .select_related("user")
             .prefetch_related("items")
             .order_by("-created_at")
         )
 
         paginator = StandardPagination()
         page = paginator.paginate_queryset(orders, request)
-        serializer = OrderSerializer(page, many=True)
+        serializer = OrderSerializer(page, many=True, context={"request": request})
         return APIResponse.paginated(
             data=serializer.data, pagination_meta=paginator.get_paginated_meta()
         )
@@ -124,7 +125,7 @@ class OrderListCreateView(APIView):
         # Clear cart after successful order placement
         cart.items.all().delete()
 
-        serializer = OrderSerializer(order)
+        serializer = OrderSerializer(order, context={"request": request})
         return APIResponse.success(
             data=serializer.data, message="Order placed successfully"
         )
@@ -142,13 +143,16 @@ class OrderDetailView(APIView):
             return APIResponse.error(message="User profile not found", status_code=404)
 
         try:
-            order = Order.objects.prefetch_related("items").get(
-                order_id=order_id, user=profile
+            order = (
+                Order.objects.select_related("user")
+                .prefetch_related("items")
+                .get(order_id=order_id, user=profile)
             )
+
         except Order.DoesNotExist:
             return APIResponse.error(message="Order not found", status_code=404)
 
-        serializer = OrderSerializer(order)
+        serializer = OrderSerializer(order, context={"request": request})
         return APIResponse.success(data=serializer.data)
 
 
@@ -179,7 +183,7 @@ class AdminOrderListView(APIView):
 
         paginator = StandardPagination()
         page = paginator.paginate_queryset(orders, request)
-        serializer = AdminOrderSerializer(page, many=True)
+        serializer = AdminOrderSerializer(page, many=True, context={"request": request})
         return APIResponse.paginated(
             data=serializer.data, pagination_meta=paginator.get_paginated_meta()
         )
@@ -210,7 +214,7 @@ class AdminOrderDetailView(APIView):
         if not order:
             return APIResponse.error(message="Order not found", status_code=404)
 
-        serializer = AdminOrderSerializer(order)
+        serializer = AdminOrderSerializer(order, context={"request": request})
         return APIResponse.success(data=serializer.data)
 
     def patch(self, request, order_id):
@@ -238,7 +242,8 @@ class AdminOrderDetailView(APIView):
             order.reject_note = serializer.validated_data["reject_note"]
             order.save()
             return APIResponse.success(
-                data=AdminOrderSerializer(order).data, message="Order rejected"
+                data=AdminOrderSerializer(order, context={"request": request}).data,
+                message="Order rejected",
             )
 
         # Accepting the order - admin's own token is used to call central APIs on behalf of the platform
@@ -278,5 +283,6 @@ class AdminOrderDetailView(APIView):
         order.status = "accepted"
         order.save()
         return APIResponse.success(
-            data=AdminOrderSerializer(order).data, message="Order accepted"
+            data=AdminOrderSerializer(order, context={"request": request}).data,
+            message="Order accepted",
         )

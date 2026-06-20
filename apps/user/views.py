@@ -101,9 +101,7 @@ class UserProfileView(APIView):
 
         data = request.data.copy()
         data["uid"] = uid
-        serializer = UserProfileSerializer(
-            data=data, files=request.FILES, context={"request": request}
-        )
+        serializer = UserProfileSerializer(data=data, context={"request": request})
         if not serializer.is_valid():
             return APIResponse.error(errors=serializer.errors, status_code=400)
         serializer.save()
