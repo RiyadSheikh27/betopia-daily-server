@@ -4,8 +4,42 @@ from .models import UserProfile
 
 @admin.register(UserProfile)
 class UserProfileAdmin(admin.ModelAdmin):
-    list_display = ["uid", "employee_id", "email", "company", "user_type", "role", "created_at"]
+    list_display = [
+        "uid",
+        "employee_id",
+        "email",
+        "company",
+        "company_address",
+        "user_type",
+        "role",
+        "created_at",
+    ]
     list_filter = ["role", "user_type"]
-    search_fields = ["email", "company", "employee_id", "uid"]
-    readonly_fields = ["uid", "employee_id", "email", "user_type", "company", "created_at", "updated_at"]
-    fields = ["uid", "employee_id", "email", "user_type", "company", "role", "created_at", "updated_at"]
+    search_fields = ["email", "company", "company_address", "employee_id", "uid"]
+    readonly_fields = [
+        "uid",
+        "employee_id",
+        "email",
+        "user_type",
+        "company",
+        "company_address",
+        "avatar",
+        "phone",
+        "access_token",
+        "created_at",
+        "updated_at",
+    ]
+    fields = [
+        "uid",
+        "employee_id",
+        "email",
+        "user_type",
+        "company",
+        "company_address",
+        "avatar",
+        "phone",
+        "access_token",
+        "role",
+        "created_at",
+        "updated_at",
+    ]

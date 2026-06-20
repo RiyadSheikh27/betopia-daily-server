@@ -22,6 +22,12 @@ from apps.cart.views import (
 )
 from apps.site_settings.views import HeroImageView
 from apps.user.views import UserProfileView
+from apps.checkout.views import (
+    OrderListCreateView,
+    OrderDetailView,
+    AdminOrderListView,
+    AdminOrderDetailView,
+)
 
 product_urlpatterns = [
     # Brand endpoints
@@ -81,9 +87,16 @@ cart_urlpatterns = [
     path("cart/clear/", CartClearView.as_view(), name="cart-clear"),
 ]
 
+order_urlpatterns = [
+    path("orders/", OrderListCreateView.as_view(), name="order-list-create"),
+    path("orders/<str:order_id>/", OrderDetailView.as_view(), name="order-detail"),
+    path("admin/orders/", AdminOrderListView.as_view(), name="admin-order-list"),
+    path("admin/orders/<str:order_id>/", AdminOrderDetailView.as_view(), name="admin-order-detail"),
+]
 
 urlpatterns = [
     *product_urlpatterns,
     *site_settings_urlpatterns,
     *cart_urlpatterns,
+    *order_urlpatterns,
 ]

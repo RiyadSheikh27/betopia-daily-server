@@ -10,7 +10,11 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/6.0/ref/settings/
 """
 
+import os
 from pathlib import Path
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -37,9 +41,8 @@ CSRF_TRUSTED_ORIGINS = [
     "http://10.10.13.19:8070",
     "http://10.10.13.22:8070",
     "https://betopiadaily.shop",
-    "https://server.betopiadaily.shop"
-    "http://betopiadaily.shop",
-    "http://server.betopiadaily.shop"
+    "https://server.betopiadaily.shop" "http://betopiadaily.shop",
+    "http://server.betopiadaily.shop",
 ]
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5174",
@@ -49,7 +52,7 @@ CORS_ALLOWED_ORIGINS = [
     "https://betopiadaily.shop",
     "https://server.betopiadaily.shop",
     "http://betopiadaily.shop",
-    "http://server.betopiadaily.shop"
+    "http://server.betopiadaily.shop",
 ]
 CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOW_CREDENTIALS = True
@@ -67,6 +70,7 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     # Third party apps
+    "rest_framework",
     "django_ckeditor_5",
     "corsheaders",
     # Local apps
@@ -76,6 +80,7 @@ INSTALLED_APPS = [
     "apps.apis",
     "apps.site_settings",
     "apps.cart",
+    "apps.checkout",
 ]
 
 MIDDLEWARE = [
@@ -267,4 +272,16 @@ CKEDITOR_5_CONFIGS = {
             ]
         },
     }
+}
+
+""" Rate Limiting Configuration """
+REST_FRAMEWORK = {
+    "DEFAULT_THROTTLE_CLASSES": [
+        "rest_framework.throttling.AnonRateThrottle",
+        "rest_framework.throttling.UserRateThrottle",
+    ],
+    "DEFAULT_THROTTLE_RATES": {
+        "anon": f"{os.getenv('RATE_LIMIT_ANON_PER_HOUR', '100')}/hour",
+        "user": f"{os.getenv('RATE_LIMIT_USER_PER_HOUR', '1000')}/hour",
+    },
 }

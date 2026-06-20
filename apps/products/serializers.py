@@ -141,7 +141,9 @@ class ProductWriteSerializer(serializers.ModelSerializer):
     tag_ids = serializers.ListField(
         child=serializers.UUIDField(), write_only=True, required=False
     )
-    description = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+    description = serializers.CharField(
+        required=False, allow_blank=True, allow_null=True
+    )
 
     class Meta:
         model = Product

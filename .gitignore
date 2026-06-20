@@ -29,8 +29,8 @@ ENV/
 *.log
 *.pot
 *.pyc
-# db.sqlite3
-# media/
+db.sqlite3
+media/
 staticfiles/
 
 
