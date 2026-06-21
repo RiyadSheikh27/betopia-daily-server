@@ -6,7 +6,9 @@ from django.conf import settings
 
 logger = logging.getLogger(__name__)
 
-JWKS_URL = f"https://login.microsoftonline.com/{settings.MS_SSO_TENANT_ID}/discovery/v2.0/keys"
+JWKS_URL = (
+    f"https://login.microsoftonline.com/{settings.MS_SSO_TENANT_ID}/discovery/v2.0/keys"
+)
 
 
 class SSOServiceError(Exception):
@@ -22,6 +24,12 @@ def verify_microsoft_token(access_token):
     and validate issuer, audience, and expiry.
     Returns decoded claims on success.
     """
+    try:
+        unverified = jwt.decode(access_token, options={"verify_signature": False})
+        logger.warning("DEBUG unverified claims: %s", unverified)
+    except Exception as exc:
+        logger.error("Could not decode token for debug: %s", exc)
+
     try:
         jwk_client = PyJWKClient(JWKS_URL)
         signing_key = jwk_client.get_signing_key_from_jwt(access_token)
@@ -43,7 +51,6 @@ def verify_microsoft_token(access_token):
     except Exception as exc:
         logger.error("JWKS verification failed: %s", exc)
         raise SSOServiceError("Unable to verify Microsoft token.", status_code=503)
-
 
 def fetch_graph_profile(access_token):
     """
