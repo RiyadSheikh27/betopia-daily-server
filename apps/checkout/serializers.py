@@ -18,6 +18,7 @@ class OrderItemSerializer(serializers.ModelSerializer):
             "price",
             "discounted_price",
             "quantity",
+            "delivery_date",
         ]
 
     def get_product_image(self, obj):

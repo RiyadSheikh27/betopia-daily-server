@@ -125,6 +125,7 @@ class OrderListCreateView(APIView):
                         price=product.price,
                         discounted_price=product.discounted_price,
                         quantity=item.quantity,
+                        delivery_date=product.delivery_date,
                     )
 
                 success = post_grocery_order(
@@ -134,7 +135,6 @@ class OrderListCreateView(APIView):
                     order_id=order.order_id,
                     funding_source="bank",
                 )
-
                 if not success:
                     raise ValueError("External grocery order submission failed")
         except ValueError:
