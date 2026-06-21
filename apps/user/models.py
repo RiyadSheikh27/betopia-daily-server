@@ -8,10 +8,11 @@ class UserProfile(models.Model):
     ]
 
     uid = models.CharField(max_length=100, unique=True)
-    employee_id = models.IntegerField(unique=True)
+    employee_id = models.IntegerField(unique=True, blank=True, null=True)
+    full_name = models.CharField(max_length=255, blank=True, null=True)
     email = models.EmailField()
-    user_type = models.CharField(max_length=50)
-    company = models.CharField(max_length=255)
+    user_type = models.CharField(max_length=50, blank=True, null=True)
+    company = models.CharField(max_length=255, blank=True, null=True)
     company_address = models.CharField(max_length=255, blank=True, null=True)
     avatar = models.ImageField(upload_to="users/avatars/", blank=True, null=True)
     phone = models.CharField(max_length=20, blank=True, null=True)

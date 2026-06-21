@@ -10,6 +10,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
         fields = [
             "uid",
             "employee_id",
+            "full_name",
             "email",
             "user_type",
             "company",

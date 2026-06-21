@@ -148,7 +148,7 @@ class SSOLoginView(APIView):
             claims.get("preferred_username") or claims.get("upn") or claims.get("email")
         )
 
-        if not azure_oid:
+        if not azure_oid or not email:
             return APIResponse.error(
                 message="Microsoft token missing required claims.", status_code=422
             )
@@ -158,6 +158,41 @@ class SSOLoginView(APIView):
         display_name = (
             graph_profile.get("displayName") if graph_profile else claims.get("name")
         )
+
+        profile = UserProfile.objects.filter(uid=azure_oid).first()
+        if not profile:
+            profile = UserProfile.objects.filter(email__iexact=email).first()
+
+        if profile:
+            updated = False
+
+            if profile.uid != azure_oid:
+                profile.uid = azure_oid
+                updated = True
+
+            if profile.email.lower() != email.lower():
+                profile.email = email
+                updated = True
+
+            if display_name and profile.full_name != display_name:
+                profile.full_name = display_name
+                updated = True
+
+            if profile.access_token != ms_token:
+                profile.access_token = ms_token
+                updated = True
+
+            if updated:
+                profile.save()
+                logger.info("SSO profile updated for %s", email)
+        else:
+            profile = UserProfile.objects.create(
+                uid=azure_oid,
+                full_name=display_name,
+                email=email,
+                access_token=ms_token,
+            )
+            logger.info("SSO profile created for %s", email)
 
         # Issue our own JWT, formatted similar to old ERP login response
         refresh = (
