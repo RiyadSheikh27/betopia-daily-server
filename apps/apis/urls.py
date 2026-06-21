@@ -28,6 +28,8 @@ from apps.checkout.views import (
     AdminOrderListView,
     AdminOrderDetailView,
 )
+from apps.user.views import SSOLoginView
+
 
 product_urlpatterns = [
     # Brand endpoints
@@ -94,9 +96,14 @@ order_urlpatterns = [
     path("admin/orders/<str:order_id>/", AdminOrderDetailView.as_view(), name="admin-order-detail"),
 ]
 
+sso_urlpatterns = [
+    path("auth/sso/login/", SSOLoginView.as_view(), name="sso-login"),
+]
+
 urlpatterns = [
     *product_urlpatterns,
     *site_settings_urlpatterns,
     *cart_urlpatterns,
     *order_urlpatterns,
+    *sso_urlpatterns,
 ]

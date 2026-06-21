@@ -1,11 +1,16 @@
+import logging
 from rest_framework.views import APIView
 from rest_framework.throttling import UserRateThrottle, AnonRateThrottle
+from rest_framework_simplejwt.tokens import RefreshToken
+
 
 from apps.utils.custom_response import APIResponse
 from .models import UserProfile
-from .serializers import UserProfileSerializer
+from .serializers import UserProfileSerializer, SSOLoginSerializer
 from .utils import decode_jwt_payload, get_token_from_request
+from .services.sso_service import verify_microsoft_token, fetch_graph_profile, SSOServiceError
 
+logger = logging.getLogger(__name__)
 
 class UserProfileView(APIView):
     throttle_classes = [AnonRateThrottle, UserRateThrottle]
@@ -108,4 +113,61 @@ class UserProfileView(APIView):
         return APIResponse.success(
             data=serializer.data,
             message="Profile created successfully.",
+        )
+
+class SSOLoginView(APIView):
+    """Verify Microsoft access token via JWKS, issue our own JWT."""
+
+    def post(self, request):
+        serializer = SSOLoginSerializer(data=request.data)
+        if not serializer.is_valid():
+            return APIResponse.error(
+                errors=serializer.errors,
+                message="Invalid request payload.",
+                status_code=422,
+            )
+
+        ms_token = serializer.validated_data["access_token"]
+
+        try:
+            claims = verify_microsoft_token(ms_token)
+        except SSOServiceError as exc:
+            logger.error("SSO login failed: %s", exc.message)
+            return APIResponse.error(message=exc.message, status_code=exc.status_code)
+
+        azure_oid = claims.get("oid")
+        email = claims.get("preferred_username") or claims.get("upn") or claims.get("email")
+
+        if not azure_oid:
+            return APIResponse.error(message="Microsoft token missing required claims.", status_code=422)
+
+        # Optional Graph call for richer profile info, never blocks login
+        graph_profile = fetch_graph_profile(ms_token)
+        display_name = graph_profile.get("displayName") if graph_profile else claims.get("name")
+
+        # Issue our own JWT, formatted similar to old ERP login response
+        refresh = RefreshToken.for_user_id(azure_oid) if hasattr(RefreshToken, "for_user_id") else None
+
+        # SimpleJWT needs a Django User instance by default, so we mint tokens manually instead
+        from rest_framework_simplejwt.tokens import AccessToken
+
+        access = AccessToken()
+        access["uid"] = azure_oid
+        access["email"] = email
+
+        refresh = RefreshToken()
+        refresh["uid"] = azure_oid
+        refresh["email"] = email
+
+        return APIResponse.success(
+            data={
+                "access_token": str(access),
+                "refresh_token": str(refresh),
+                "user": {
+                    "id": azure_oid,
+                    "email": email,
+                    "name": display_name,
+                },
+            },
+            message="SSO login successful",
         )

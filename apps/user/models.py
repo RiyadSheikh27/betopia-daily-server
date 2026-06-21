@@ -7,7 +7,7 @@ class UserProfile(models.Model):
         ("user", "User"),
     ]
 
-    uid = models.IntegerField(unique=True)
+    uid = models.CharField(max_length=100, unique=True)
     employee_id = models.IntegerField(unique=True)
     email = models.EmailField()
     user_type = models.CharField(max_length=50)

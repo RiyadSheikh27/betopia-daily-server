@@ -32,3 +32,6 @@ class UserProfileSerializer(serializers.ModelSerializer):
         if obj.avatar and request:
             return request.build_absolute_uri(obj.avatar.url)
         return None
+
+class SSOLoginSerializer(serializers.Serializer):
+    access_token = serializers.CharField(required=True, allow_blank=False)

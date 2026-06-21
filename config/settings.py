@@ -285,3 +285,16 @@ REST_FRAMEWORK = {
         "user": f"{os.getenv('RATE_LIMIT_USER_PER_HOUR', '1000')}/hour",
     },
 }
+
+
+MS_SSO_CLIENT_ID = os.environ.get("MS_SSO_CLIENT_ID", "97fadfc8-200e-42d9-b112-787b091a432c")
+MS_SSO_TENANT_ID = os.environ.get("MS_SSO_TENANT_ID", "0d2c1116-d7c2-4380-b446-78e71d8f2465")
+
+from datetime import timedelta
+
+SIMPLE_JWT = {
+    "ACCESS_TOKEN_LIFETIME": timedelta(hours=1),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=30),
+    "ALGORITHM": "HS256",
+    "SIGNING_KEY": SECRET_KEY,
+}

@@ -70,3 +70,16 @@ class AdminOrderSerializer(serializers.ModelSerializer):
 
     def get_item_count(self, obj):
         return obj.items.count()
+
+
+# Order status update serializer for admin
+class OrderStatusUpdateSerializer(serializers.Serializer):
+    status = serializers.ChoiceField(choices=["accepted", "rejected"])
+    reject_note = serializers.CharField(required=False, allow_blank=True)
+
+    def validate(self, attrs):
+        if attrs["status"] == "rejected" and not attrs.get("reject_note"):
+            raise serializers.ValidationError(
+                "reject_note is required when rejecting an order."
+            )
+        return attrs
