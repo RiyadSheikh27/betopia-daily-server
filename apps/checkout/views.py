@@ -1,3 +1,4 @@
+from django.db import transaction
 from django.db.models import Sum, Q
 from rest_framework.views import APIView
 
@@ -13,7 +14,7 @@ from .serializers import (
     AdminOrderSerializer,
     OrderStatusUpdateSerializer,
 )
-from .utils import get_eligible_amount, hit_shopping_request
+from .utils import get_eligible_amount, hit_shopping_request, post_grocery_order
 
 
 def get_profile(request) -> UserProfile | None:
@@ -81,8 +82,8 @@ class OrderListCreateView(APIView):
             item.product.discounted_price * item.quantity for item in cart.items.all()
         )
 
-        # Step 1: check eligibility, block order entirely on failure
-        eligible_amount = get_eligible_amount(token)
+        # Step 1: check eligibility by email, block order entirely on failure
+        eligible_amount = get_eligible_amount(profile.email)
         if eligible_amount is None:
             return APIResponse.error(
                 message="Unable to verify eligibility balance. Please try again later.",
@@ -98,28 +99,48 @@ class OrderListCreateView(APIView):
             )
 
         # Step 3: create order and snapshot items
-        order = Order.objects.create(
-            user=profile,
-            company=profile.company,
-            company_address=getattr(profile, "company_address", None),
-            total_amount=order_total,
-        )
+        product_names = ", ".join(item.product.name for item in cart.items.all())
 
-        for item in cart.items.all():
-            product = item.product
-            images = product.images.all()
-            primary = next((img for img in images if img.is_primary), None)
-            image = primary or (images[0] if images else None)
-            OrderItem.objects.create(
-                order=order,
-                product=product,
-                product_name=product.name,
-                product_slug=product.slug,
-                product_image=image.image.url if image else None,
-                unit=product.unit,
-                price=product.price,
-                discounted_price=product.discounted_price,
-                quantity=item.quantity,
+        try:
+            with transaction.atomic():
+                order = Order.objects.create(
+                    user=profile,
+                    company=profile.company,
+                    company_address=getattr(profile, "company_address", None),
+                    total_amount=order_total,
+                )
+
+                for item in cart.items.all():
+                    product = item.product
+                    images = product.images.all()
+                    primary = next((img for img in images if img.is_primary), None)
+                    image = primary or (images[0] if images else None)
+                    OrderItem.objects.create(
+                        order=order,
+                        product=product,
+                        product_name=product.name,
+                        product_slug=product.slug,
+                        product_image=image.image.url if image else None,
+                        unit=product.unit,
+                        price=product.price,
+                        discounted_price=product.discounted_price,
+                        quantity=item.quantity,
+                    )
+
+                success = post_grocery_order(
+                    email=profile.email,
+                    amount=order_total,
+                    product_name=product_names,
+                    order_id=order.order_id,
+                    funding_source="bank",
+                )
+
+                if not success:
+                    raise ValueError("External grocery order submission failed")
+        except ValueError:
+            return APIResponse.error(
+                message="Unable to submit order to the external grocery system. Please try again later.",
+                status_code=503,
             )
 
         # Clear cart after successful order placement
@@ -249,8 +270,8 @@ class AdminOrderDetailView(APIView):
         # Accepting the order - admin's own token is used to call central APIs on behalf of the platform
         order_user_token = order.user.access_token
 
-        # Step 1: re-check eligibility fresh
-        eligible_amount = get_eligible_amount(order_user_token)
+        # Step 1: re-check eligibility fresh by email
+        eligible_amount = get_eligible_amount(order.user.email)
         if eligible_amount is None:
             return APIResponse.error(
                 message="Unable to verify eligibility balance. Please try again later.",
