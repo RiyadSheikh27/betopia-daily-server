@@ -33,5 +33,14 @@ class UserProfileSerializer(serializers.ModelSerializer):
             return request.build_absolute_uri(obj.avatar.url)
         return None
 
+
 class SSOLoginSerializer(serializers.Serializer):
-    access_token = serializers.CharField(required=True, allow_blank=False)
+    access_token = serializers.CharField(required=False, allow_blank=False)
+    id_token = serializers.CharField(required=False, allow_blank=False)
+
+    def validate(self, attrs):
+        if not attrs.get("access_token") and not attrs.get("id_token"):
+            raise serializers.ValidationError(
+                "Either access_token or id_token is required."
+            )
+        return attrs
