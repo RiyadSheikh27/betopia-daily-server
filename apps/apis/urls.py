@@ -28,6 +28,7 @@ from apps.checkout.views import (
     AdminOrderListView,
     AdminOrderDetailView,
 )
+from apps.dashboard.urls import urlpatterns as dashboard_urlpatterns
 from apps.user.views import SSOLoginView
 
 
@@ -106,4 +107,5 @@ urlpatterns = [
     *cart_urlpatterns,
     *order_urlpatterns,
     *sso_urlpatterns,
+    *dashboard_urlpatterns,
 ]
