@@ -75,7 +75,7 @@ class AdminOrderSerializer(serializers.ModelSerializer):
 
 # Order status update serializer for admin
 class OrderStatusUpdateSerializer(serializers.Serializer):
-    status = serializers.ChoiceField(choices=["accepted", "rejected"])
+    status = serializers.ChoiceField(choices=["accepted", "rejected", "delivered"])
     reject_note = serializers.CharField(required=False, allow_blank=True)
 
     def validate(self, attrs):

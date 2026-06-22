@@ -81,6 +81,36 @@ def post_grocery_order(
         return False
 
 
+def confirm_order_delivery(order_id):
+    """
+    Hit central order confirmation API to mark order as delivered.
+    Deducts money and changes status to approved.
+    Returns True only if the response explicitly has success=true.
+    """
+    if not order_id:
+        return False
+
+    payload = {"order_id": order_id}
+    headers = {
+        "X-API-Key": settings.GROCERY_ELIGIBILITY_API_KEY,
+        "Content-Type": "application/json",
+    }
+
+    try:
+        response = requests.post(
+            "https://erp.betopiagroup.com/grocery-api/order/confirm/",
+            json=payload,
+            headers=headers,
+            timeout=10,
+        )
+        if response.status_code != 200:
+            return False
+        data = response.json()
+        return data.get("success") is True
+    except (requests.RequestException, ValueError):
+        return False
+
+
 def hit_shopping_request(access_token, employee_id, amount, product_name, order_id):
     """
     Hit central shopping request API to confirm an accepted order.

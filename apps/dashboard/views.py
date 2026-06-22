@@ -56,7 +56,9 @@ class DashboardSummaryView(AdminDashboardBaseView):
         accepted_orders = orders.filter(status="accepted")
 
         summary = {
-            "total_sales": float(accepted_orders.aggregate(total=Sum("total_amount"))["total"] or 0),
+            "total_sales": float(
+                accepted_orders.aggregate(total=Sum("total_amount"))["total"] or 0
+            ),
             "total_orders": orders.count(),
             "total_customers": UserProfile.objects.filter(**user_filters).count(),
             "total_pending_orders": orders.filter(status="pending").count(),
@@ -73,7 +75,9 @@ class DashboardTopProductsView(AdminDashboardBaseView):
         if not serializer.is_valid():
             return APIResponse.error(errors=serializer.errors, status_code=400)
 
-        order_filters = _build_date_filters(serializer.validated_data, "order__created_at")
+        order_filters = _build_date_filters(
+            serializer.validated_data, "order__created_at"
+        )
         sold_items = (
             OrderItem.objects.filter(order__status="accepted", **order_filters)
             .values("product_id", "product__slug", "product_name")
@@ -114,7 +118,10 @@ class DashboardRevenueChartView(AdminDashboardBaseView):
         )
 
         data = [
-            {"month": item["month"].strftime("%Y-%m"), "amount": float(item["amount"] or 0)}
+            {
+                "month": item["month"].strftime("%Y-%m"),
+                "amount": float(item["amount"] or 0),
+            }
             for item in revenue
         ]
 

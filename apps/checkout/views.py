@@ -14,7 +14,12 @@ from .serializers import (
     AdminOrderSerializer,
     OrderStatusUpdateSerializer,
 )
-from .utils import get_eligible_amount, hit_shopping_request, post_grocery_order
+from .utils import (
+    get_eligible_amount,
+    hit_shopping_request,
+    post_grocery_order,
+    confirm_order_delivery,
+)
 
 
 def get_profile(request) -> UserProfile | None:
@@ -137,6 +142,11 @@ class OrderListCreateView(APIView):
                 )
                 if not success:
                     raise ValueError("External grocery order submission failed")
+
+                # Step 4: confirm the order to deduct money from central system
+                confirm_success = confirm_order_delivery(order.order_id)
+                if not confirm_success:
+                    raise ValueError("Failed to confirm order with central system")
         except ValueError:
             return APIResponse.error(
                 message="Unable to submit order to the external grocery system. Please try again later.",
@@ -247,18 +257,16 @@ class AdminOrderDetailView(APIView):
         if not order:
             return APIResponse.error(message="Order not found", status_code=404)
 
-        if order.status != "pending":
-            return APIResponse.error(
-                message="Only pending orders can be accepted or rejected"
-            )
-
         serializer = OrderStatusUpdateSerializer(data=request.data)
         if not serializer.is_valid():
             return APIResponse.error(errors=serializer.errors)
 
         new_status = serializer.validated_data["status"]
 
+        # Reject transition: from pending only
         if new_status == "rejected":
+            if order.status != "pending":
+                return APIResponse.error(message="Only pending orders can be rejected")
             order.status = "rejected"
             order.reject_note = serializer.validated_data["reject_note"]
             order.save()
@@ -266,6 +274,29 @@ class AdminOrderDetailView(APIView):
                 data=AdminOrderSerializer(order, context={"request": request}).data,
                 message="Order rejected",
             )
+
+        # Delivered transition: from accepted only
+        if new_status == "delivered":
+            if order.status != "accepted":
+                return APIResponse.error(
+                    message="Only accepted orders can be marked as delivered"
+                )
+            success = confirm_order_delivery(order.order_id)
+            if not success:
+                return APIResponse.error(
+                    message="Failed to confirm delivery with central system",
+                    status_code=503,
+                )
+            order.status = "delivered"
+            order.save()
+            return APIResponse.success(
+                data=AdminOrderSerializer(order, context={"request": request}).data,
+                message="Order marked as delivered",
+            )
+
+        # Accept transition: from pending only
+        if order.status != "pending":
+            return APIResponse.error(message="Only pending orders can be accepted")
 
         # Accepting the order - admin's own token is used to call central APIs on behalf of the platform
         order_user_token = order.user.access_token

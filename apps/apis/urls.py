@@ -31,7 +31,6 @@ from apps.checkout.views import (
 from apps.dashboard.urls import urlpatterns as dashboard_urlpatterns
 from apps.user.views import SSOLoginView
 
-
 product_urlpatterns = [
     # Brand endpoints
     path("brands/", BrandListCreateView.as_view(), name="brand-list-create"),
@@ -94,7 +93,11 @@ order_urlpatterns = [
     path("orders/", OrderListCreateView.as_view(), name="order-list-create"),
     path("orders/<str:order_id>/", OrderDetailView.as_view(), name="order-detail"),
     path("admin/orders/", AdminOrderListView.as_view(), name="admin-order-list"),
-    path("admin/orders/<str:order_id>/", AdminOrderDetailView.as_view(), name="admin-order-detail"),
+    path(
+        "admin/orders/<str:order_id>/",
+        AdminOrderDetailView.as_view(),
+        name="admin-order-detail",
+    ),
 ]
 
 sso_urlpatterns = [
