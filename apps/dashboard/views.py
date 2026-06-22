@@ -66,6 +66,7 @@ class DashboardSummaryView(AdminDashboardBaseView):
             "total_accepted_orders": accepted_orders.count(),
             "total_rejected_orders": orders.filter(status="rejected").count(),
             "stock_products": Product.objects.filter(status=True).count(),
+            "total_products": Product.objects.count(),
         }
         return APIResponse.success(data=summary)
 
