@@ -226,7 +226,7 @@ class TagDetailView(APIView):
 # Product helper
 def annotate_product_sales(queryset):
     return queryset.annotate(
-        total_sold=Coalesce(
+        sold_count=Coalesce(
             Sum(
                 "order_items__quantity",
                 filter=Q(order_items__order__status__in=["accepted", "delivered"]),
@@ -266,7 +266,7 @@ def apply_product_filters(queryset, request):
     elif sort == "price_high":
         queryset = queryset.order_by("-discounted_price")
     elif sort == "best_sell":
-        queryset = queryset.order_by("-total_sold")
+        queryset = queryset.order_by("-sold_count")
     elif sort == "top_review":
         queryset = queryset.order_by("-avg_rating")
 
@@ -324,14 +324,11 @@ class ProductDetailView(APIView):
 
     def get_object(self, slug):
         try:
-            return (
-                annotate_product_sales(
-                    Product.objects.select_related("brand", "category").prefetch_related(
-                        "images", "tags"
-                    )
+            return annotate_product_sales(
+                Product.objects.select_related("brand", "category").prefetch_related(
+                    "images", "tags"
                 )
-                .get(slug=slug)
-            )
+            ).get(slug=slug)
         except Product.DoesNotExist:
             return None
 

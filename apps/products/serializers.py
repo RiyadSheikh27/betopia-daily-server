@@ -65,6 +65,7 @@ class ProductListSerializer(serializers.ModelSerializer):
     brand_slug = serializers.CharField(source="brand.slug", read_only=True)
     category_name = serializers.CharField(source="category.name", read_only=True)
     category_slug = serializers.CharField(source="category.slug", read_only=True)
+    total_sold = serializers.SerializerMethodField()
 
     class Meta:
         model = Product
@@ -98,6 +99,9 @@ class ProductListSerializer(serializers.ModelSerializer):
             return request.build_absolute_uri(image.image.url)
         return None
 
+    def get_total_sold(self, obj):
+        return getattr(obj, "sold_count", obj.total_sold)
+
 
 # Product detail serializer (full info)
 class ProductDetailSerializer(serializers.ModelSerializer):
@@ -105,6 +109,7 @@ class ProductDetailSerializer(serializers.ModelSerializer):
     tags = TagSerializer(many=True, read_only=True)
     brand = BrandSerializer(read_only=True)
     category = CategorySerializer(read_only=True)
+    total_sold = serializers.SerializerMethodField()
 
     class Meta:
         model = Product
@@ -135,6 +140,9 @@ class ProductDetailSerializer(serializers.ModelSerializer):
             "created_at",
             "updated_at",
         ]
+
+    def get_total_sold(self, obj):
+        return getattr(obj, "sold_count", obj.total_sold)
 
 
 # Product create/update serializer (for CMS)
