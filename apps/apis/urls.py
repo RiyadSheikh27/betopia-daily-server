@@ -21,15 +21,19 @@ from apps.cart.views import (
     CartClearView,
 )
 from apps.site_settings.views import HeroImageView
-from apps.user.views import UserProfileView
+from apps.user.views import UserProfileView, SSOLoginView
 from apps.checkout.views import (
     OrderListCreateView,
     OrderDetailView,
     AdminOrderListView,
     AdminOrderDetailView,
 )
-from apps.dashboard.urls import urlpatterns as dashboard_urlpatterns
-from apps.user.views import SSOLoginView
+from apps.dashboard.views import (
+    DashboardSummaryView,
+    DashboardUserListView,
+    DashboardTopProductsView,
+    DashboardRevenueChartView,
+)
 
 product_urlpatterns = [
     # Brand endpoints
@@ -102,6 +106,25 @@ order_urlpatterns = [
 
 sso_urlpatterns = [
     path("auth/sso/login/", SSOLoginView.as_view(), name="sso-login"),
+]
+
+dashboard_urlpatterns = [
+    path(
+        "dashboard/summary/", DashboardSummaryView.as_view(), name="dashboard-summary"
+    ),
+    path(
+        "dashboard/users/", DashboardUserListView.as_view(), name="dashboard-user-list"
+    ),
+    path(
+        "dashboard/top-products/",
+        DashboardTopProductsView.as_view(),
+        name="dashboard-top-products",
+    ),
+    path(
+        "dashboard/revenue-chart/",
+        DashboardRevenueChartView.as_view(),
+        name="dashboard-revenue-chart",
+    ),
 ]
 
 urlpatterns = [

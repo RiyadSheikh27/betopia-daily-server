@@ -1,5 +1,31 @@
 from rest_framework import serializers
 
+from apps.user.models import UserProfile
+
+
+class DashboardUserSerializer(serializers.ModelSerializer):
+    avatar = serializers.SerializerMethodField()
+
+    class Meta:
+        model = UserProfile
+        fields = [
+            "uid",
+            "employee_id",
+            "full_name",
+            "email",
+            "company",
+            "avatar",
+            "phone",
+            "role",
+            "created_at",
+        ]
+
+    def get_avatar(self, obj):
+        request = self.context.get("request")
+        if obj.avatar and request:
+            return request.build_absolute_uri(obj.avatar.url)
+        return None
+
 
 class DashboardDateFilterSerializer(serializers.Serializer):
     start_date = serializers.DateField(required=False)

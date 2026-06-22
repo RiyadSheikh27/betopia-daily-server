@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from .models import Order, OrderItem
-from apps.user.serializers import UserProfileSerializer
+from apps.user.serializers import UserProfileSerializer, UserProfileLimitedSerializer
 
 
 # Order item serializer
@@ -31,14 +31,12 @@ class OrderItemSerializer(serializers.ModelSerializer):
 # Order serializer for user list and detail
 class OrderSerializer(serializers.ModelSerializer):
     items = OrderItemSerializer(many=True, read_only=True)
-    user = UserProfileSerializer(read_only=True)
 
     class Meta:
         model = Order
         fields = [
             "id",
             "order_id",
-            "user",
             "status",
             "reject_note",
             "total_amount",
@@ -47,10 +45,10 @@ class OrderSerializer(serializers.ModelSerializer):
         ]
 
 
-# Order serializer for admin list and detail, includes full user info
+# Order serializer for admin list and detail, includes limited user info
 class AdminOrderSerializer(serializers.ModelSerializer):
     items = OrderItemSerializer(many=True, read_only=True)
-    user = UserProfileSerializer(read_only=True)
+    user = UserProfileLimitedSerializer(read_only=True)
     item_count = serializers.SerializerMethodField()
 
     class Meta:

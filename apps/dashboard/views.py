@@ -1,13 +1,14 @@
-from django.db.models import F, Sum
-from django.db.models.functions import TruncMonth
+from django.db.models import F, Sum, OuterRef, Subquery
+from django.db.models.functions import Coalesce, TruncMonth
 from rest_framework.views import APIView
 
 from apps.utils.custom_response import APIResponse
+from apps.utils.pagination import StandardPagination
 from apps.user.models import UserProfile
 from apps.user.utils import decode_jwt_payload, get_token_from_request
 from apps.checkout.models import Order, OrderItem
-from apps.products.models import Product
-from .serializers import DashboardDateFilterSerializer
+from apps.products.models import Product, ProductImage
+from .serializers import DashboardDateFilterSerializer, DashboardUserSerializer
 
 
 def _get_request_profile(request):
@@ -69,6 +70,20 @@ class DashboardSummaryView(AdminDashboardBaseView):
         return APIResponse.success(data=summary)
 
 
+class DashboardUserListView(AdminDashboardBaseView):
+    def get(self, request):
+        users = UserProfile.objects.all().order_by("-created_at")
+        paginator = StandardPagination()
+        page = paginator.paginate_queryset(users, request)
+        serializer = DashboardUserSerializer(
+            page, many=True, context={"request": request}
+        )
+        return APIResponse.paginated(
+            data=serializer.data,
+            pagination_meta=paginator.get_paginated_meta(),
+        )
+
+
 class DashboardTopProductsView(AdminDashboardBaseView):
     def get(self, request):
         serializer = DashboardDateFilterSerializer(data=request.query_params)
@@ -78,12 +93,23 @@ class DashboardTopProductsView(AdminDashboardBaseView):
         order_filters = _build_date_filters(
             serializer.validated_data, "order__created_at"
         )
+        primary_image = ProductImage.objects.filter(
+            product_id=OuterRef("product_id"), is_primary=True
+        ).values("image")[:1]
+        fallback_image = ProductImage.objects.filter(
+            product_id=OuterRef("product_id")
+        ).values("image")[:1]
+
         sold_items = (
             OrderItem.objects.filter(order__status="accepted", **order_filters)
             .values("product_id", "product__slug", "product_name")
             .annotate(
                 total_quantity=Sum("quantity"),
                 total_amount=Sum(F("discounted_price") * F("quantity")),
+                product_image=Coalesce(
+                    Subquery(primary_image),
+                    Subquery(fallback_image),
+                ),
             )
             .order_by("-total_amount")[:5]
         )
@@ -93,6 +119,11 @@ class DashboardTopProductsView(AdminDashboardBaseView):
                 "product_id": item["product_id"],
                 "product_name": item["product_name"],
                 "product_slug": item["product__slug"],
+                "product_image": (
+                    request.build_absolute_uri(item["product_image"])
+                    if item["product_image"]
+                    else None
+                ),
                 "total_quantity": item["total_quantity"],
                 "total_amount": float(item["total_amount"] or 0),
             }
