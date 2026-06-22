@@ -16,7 +16,6 @@ from .serializers import (
 )
 from .utils import (
     get_eligible_amount,
-    hit_shopping_request,
     post_grocery_order,
     confirm_order_delivery,
 )
@@ -297,40 +296,6 @@ class AdminOrderDetailView(APIView):
         # Accept transition: from pending only
         if order.status != "pending":
             return APIResponse.error(message="Only pending orders can be accepted")
-
-        # Accepting the order - admin's own token is used to call central APIs on behalf of the platform
-        order_user_token = order.user.access_token
-
-        # Step 1: re-check eligibility fresh by email
-        eligible_amount = get_eligible_amount(order.user.email)
-        if eligible_amount is None:
-            return APIResponse.error(
-                message="Unable to verify eligibility balance. Please try again later.",
-                status_code=503,
-            )
-
-        # Step 2: re-check sum of pending + accepted for this user
-        existing_total = get_pending_accepted_total(order.user)
-        if existing_total > eligible_amount:
-            return APIResponse.error(
-                message="Cannot accept order since you do not have enough eligible amount to proceed",
-                status_code=400,
-            )
-
-        # Step 3: hit central shopping request API
-        product_names = ", ".join(item.product_name for item in order.items.all())
-        success = hit_shopping_request(
-            access_token=order_user_token,
-            employee_id=order.user.employee_id,
-            amount=order.total_amount,
-            product_name=product_names,
-            order_id=order.order_id,
-        )
-
-        if not success:
-            return APIResponse.error(
-                message="Failed to confirm order with central system", status_code=503
-            )
 
         order.status = "accepted"
         order.save()
