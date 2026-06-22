@@ -31,6 +31,8 @@ from apps.checkout.views import (
 from apps.dashboard.views import (
     DashboardSummaryView,
     DashboardUserListView,
+    DashboardSalesReportView,
+    DashboardSalesReportDownloadView,
     DashboardTopProductsView,
     DashboardRevenueChartView,
 )
@@ -124,6 +126,16 @@ dashboard_urlpatterns = [
         "dashboard/revenue-chart/",
         DashboardRevenueChartView.as_view(),
         name="dashboard-revenue-chart",
+    ),
+    path(
+        "dashboard/sales-report/",
+        DashboardSalesReportView.as_view(),
+        name="dashboard-sales-report",
+    ),
+    path(
+        "dashboard/sales-report-download/",
+        DashboardSalesReportDownloadView.as_view(),
+        name="dashboard-sales-report-download",
     ),
 ]
 
