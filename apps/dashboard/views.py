@@ -211,8 +211,12 @@ class DashboardSalesReportDownloadView(AdminDashboardBaseView):
             f"Date Range: {serializer.validated_data.get('start_date') or 'Any'} to {serializer.validated_data.get('end_date') or 'Any'}",
         )
         pdf.drawString(50, title_y - 50, f"Total Revenue: {total_revenue:.2f}")
-        pdf.drawString(50, title_y - 70, f"Total Orders Delivered: {total_orders_delivered}")
-        pdf.drawString(50, title_y - 90, f"Average Order Value: {average_order_value:.2f}")
+        pdf.drawString(
+            50, title_y - 70, f"Total Orders Delivered: {total_delivered_orders}"
+        )
+        pdf.drawString(
+            50, title_y - 90, f"Average Order Value: {average_order_value:.2f}"
+        )
         pdf.drawString(50, title_y - 110, f"Total Orders: {total_orders}")
 
         legend_x = 320
