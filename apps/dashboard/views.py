@@ -1,5 +1,6 @@
 from io import BytesIO
 
+from django.conf import settings
 from django.db.models import F, Sum, OuterRef, Subquery, Value
 from django.db.models.functions import Coalesce, TruncMonth
 from django.http import HttpResponse
@@ -298,8 +299,9 @@ class DashboardTopProductsView(AdminDashboardBaseView):
         results = []
         for item in sold_items:
             image_path = item["product_image"]
-            if image_path and not image_path.startswith("/"):
-                image_path = "/" + image_path
+            if image_path:
+                if not image_path.startswith(settings.MEDIA_URL):
+                    image_path = settings.MEDIA_URL + image_path.lstrip("/")
 
             results.append(
                 {
