@@ -295,21 +295,24 @@ class DashboardTopProductsView(AdminDashboardBaseView):
             .order_by("-total_amount")[:5]
         )
 
-        results = [
-            {
-                "product_id": item["product_id"],
-                "product_name": item["product_name"],
-                "product_slug": item["product__slug"],
-                "product_image": (
-                    request.build_absolute_uri(item["product_image"])
-                    if item["product_image"]
-                    else None
-                ),
-                "total_quantity": item["total_quantity"],
-                "total_amount": float(item["total_amount"] or 0),
-            }
-            for item in sold_items
-        ]
+        results = []
+        for item in sold_items:
+            image_path = item["product_image"]
+            if image_path and not image_path.startswith("/"):
+                image_path = "/" + image_path
+
+            results.append(
+                {
+                    "product_id": item["product_id"],
+                    "product_name": item["product_name"],
+                    "product_slug": item["product__slug"],
+                    "product_image": (
+                        request.build_absolute_uri(image_path) if image_path else None
+                    ),
+                    "total_quantity": item["total_quantity"],
+                    "total_amount": float(item["total_amount"] or 0),
+                }
+            )
 
         return APIResponse.success(data=results)
 
