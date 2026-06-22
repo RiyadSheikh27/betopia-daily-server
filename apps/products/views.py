@@ -1,9 +1,9 @@
 from django.utils import timezone
-from django.db.models import Q
+from django.db.models import Count, Q, Sum
+from django.db.models.functions import Coalesce
 from rest_framework.views import APIView
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from apps.utils.pagination import StandardPagination
-from django.db.models import Count
 
 from apps.utils.custom_response import APIResponse
 from apps.user.permissions import (
@@ -224,6 +224,18 @@ class TagDetailView(APIView):
 
 
 # Product helper
+def annotate_product_sales(queryset):
+    return queryset.annotate(
+        total_sold=Coalesce(
+            Sum(
+                "order_items__quantity",
+                filter=Q(order_items__order__status__in=["accepted", "delivered"]),
+            ),
+            0,
+        )
+    )
+
+
 def apply_product_filters(queryset, request):
     brand_slug = request.query_params.get("brand")
     category_slug = request.query_params.get("category")
@@ -276,6 +288,7 @@ class ProductListCreateView(APIView):
         products = Product.objects.select_related("brand", "category").prefetch_related(
             "images", "tags"
         )
+        products = annotate_product_sales(products)
         products = apply_product_filters(products, request)
 
         paginator = StandardPagination()
@@ -312,8 +325,11 @@ class ProductDetailView(APIView):
     def get_object(self, slug):
         try:
             return (
-                Product.objects.select_related("brand", "category")
-                .prefetch_related("images", "tags")
+                annotate_product_sales(
+                    Product.objects.select_related("brand", "category").prefetch_related(
+                        "images", "tags"
+                    )
+                )
                 .get(slug=slug)
             )
         except Product.DoesNotExist:
