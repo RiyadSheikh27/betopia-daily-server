@@ -54,17 +54,18 @@ class UserProfileView(APIView):
             return error
 
         employee_id = request.data.get("employee_id")
-        if not employee_id:
-            return APIResponse.error(
-                message="employee_id is required.", status_code=400
-            )
 
         # uid always comes from JWT — user cannot spoof it
         uid = payload["uid"]
 
-        # Look up by uid first since it is JWT-verified, fallback to employee_id for legacy rows
+        # Look up by uid first since it is JWT-verified
         profile = UserProfile.objects.filter(uid=uid).first()
         if not profile:
+            if not employee_id:
+                return APIResponse.error(
+                    message="employee_id is required when profile is not found by uid.",
+                    status_code=400,
+                )
             profile = UserProfile.objects.filter(employee_id=employee_id).first()
 
         if profile:
