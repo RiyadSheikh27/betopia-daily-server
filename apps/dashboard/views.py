@@ -61,13 +61,15 @@ class AdminDashboardBaseView(APIView):
             raise exceptions.PermissionDenied(detail="Admin access required")
 
     def finalize_response(self, request, response, *args, **kwargs):
-        response = super().finalize_response(request, response, *args, **kwargs)
-        if isinstance(response, Response) and not getattr(response, "accepted_renderer", None):
+        # Patch BEFORE calling super(), not after
+        if isinstance(response, Response) and not getattr(
+            response, "accepted_renderer", None
+        ):
             renderer = JSONRenderer()
             response.accepted_renderer = renderer
             response.accepted_media_type = renderer.media_type
             response.renderer_context = self.get_renderer_context()
-        return response
+        return super().finalize_response(request, response, *args, **kwargs)
 
 
 class DashboardSummaryView(AdminDashboardBaseView):
