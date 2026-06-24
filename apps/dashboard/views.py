@@ -43,14 +43,17 @@ def _build_date_filters(validated_data, field_name):
     return filters
 
 
+from rest_framework import exceptions
+
+
 class AdminDashboardBaseView(APIView):
     permission_classes = []
 
-    def dispatch(self, request, *args, **kwargs):
+    def initial(self, request, *args, **kwargs):
+        super().initial(request, *args, **kwargs)
         profile = _get_request_profile(request)
         if not profile or profile.role != "admin":
-            return APIResponse.error(message="Admin access required", status_code=403)
-        return super().dispatch(request, *args, **kwargs)
+            raise exceptions.PermissionDenied(detail="Admin access required")
 
 
 class DashboardSummaryView(AdminDashboardBaseView):
