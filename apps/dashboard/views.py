@@ -9,6 +9,8 @@ from reportlab.graphics.charts.piecharts import Pie
 from reportlab.graphics.shapes import Drawing
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
+from rest_framework.parsers import JSONParser
+from rest_framework.renderers import JSONRenderer
 from rest_framework.views import APIView
 
 from apps.utils.custom_response import APIResponse
@@ -48,6 +50,8 @@ from rest_framework import exceptions
 
 class AdminDashboardBaseView(APIView):
     permission_classes = []
+    renderer_classes = [JSONRenderer]
+    parser_classes = [JSONParser]
 
     def initial(self, request, *args, **kwargs):
         super().initial(request, *args, **kwargs)
