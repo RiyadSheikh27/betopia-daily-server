@@ -41,7 +41,8 @@ CSRF_TRUSTED_ORIGINS = [
     "http://10.10.13.19:8070",
     "http://10.10.13.22:8070",
     "https://betopiadaily.shop",
-    "https://server.betopiadaily.shop" "http://betopiadaily.shop",
+    "https://server.betopiadaily.shop",
+    "http://betopiadaily.shop",
     "http://server.betopiadaily.shop",
 ]
 CORS_ALLOWED_ORIGINS = [

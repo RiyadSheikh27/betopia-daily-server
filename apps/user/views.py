@@ -1,4 +1,6 @@
 import logging
+from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import csrf_exempt
 from rest_framework.views import APIView
 from rest_framework.throttling import UserRateThrottle, AnonRateThrottle
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -122,6 +124,7 @@ class UserProfileView(APIView):
         )
 
 
+@method_decorator(csrf_exempt, name="dispatch")
 class SSOLoginView(APIView):
     """Verify Microsoft access or ID token via JWKS/Graph and issue our own JWT."""
 
