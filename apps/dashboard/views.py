@@ -11,6 +11,7 @@ from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 from rest_framework.parsers import JSONParser
 from rest_framework.renderers import JSONRenderer
+from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.utils.custom_response import APIResponse
@@ -58,6 +59,15 @@ class AdminDashboardBaseView(APIView):
         profile = _get_request_profile(request)
         if not profile or profile.role != "admin":
             raise exceptions.PermissionDenied(detail="Admin access required")
+
+    def finalize_response(self, request, response, *args, **kwargs):
+        response = super().finalize_response(request, response, *args, **kwargs)
+        if isinstance(response, Response) and not getattr(response, "accepted_renderer", None):
+            renderer = JSONRenderer()
+            response.accepted_renderer = renderer
+            response.accepted_media_type = renderer.media_type
+            response.renderer_context = self.get_renderer_context()
+        return response
 
 
 class DashboardSummaryView(AdminDashboardBaseView):
