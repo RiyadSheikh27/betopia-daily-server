@@ -128,13 +128,13 @@ WSGI_APPLICATION = "config.wsgi.application"
 
 # Production Database
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'betopia_daily',
-        'USER': 'betopia_daily_user',
-        'PASSWORD': 'betopia_daily@123',
-        'HOST': 'localhost',
-        'PORT': '5432',
+    "default": {
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": "betopia_daily",
+        "USER": "betopia_daily_user",
+        "PASSWORD": "betopia_daily@123",
+        "HOST": "localhost",
+        "PORT": "5432",
     }
 }
 
@@ -284,6 +284,7 @@ REST_FRAMEWORK = {
     "DEFAULT_PARSER_CLASSES": [
         "rest_framework.parsers.JSONParser",
     ],
+    "DEFAULT_AUTHENTICATION_CLASSES": [],
     "DEFAULT_THROTTLE_CLASSES": [
         "rest_framework.throttling.AnonRateThrottle",
         "rest_framework.throttling.UserRateThrottle",
