@@ -17,6 +17,7 @@ from .serializers import (
 from .utils import (
     get_eligible_amount,
     post_grocery_order,
+    reject_grocery_order,
     confirm_order_delivery,
 )
 
@@ -86,8 +87,8 @@ class OrderListCreateView(APIView):
             item.product.discounted_price * item.quantity for item in cart.items.all()
         )
 
-        # Step 1: check eligibility by email, block order entirely on failure
-        eligible_amount = get_eligible_amount(profile.email)
+        # Step 1: check eligibility using the user's microsoft_access_token
+        eligible_amount = get_eligible_amount(profile.microsoft_access_token)
         if eligible_amount is None:
             return APIResponse.error(
                 message="Unable to verify eligibility balance. Please try again later.",
@@ -133,7 +134,7 @@ class OrderListCreateView(APIView):
                     )
 
                 success = post_grocery_order(
-                    email=profile.email,
+                    access_token=profile.microsoft_access_token,
                     amount=order_total,
                     product_name=product_names,
                     order_id=order.order_id,
@@ -141,11 +142,6 @@ class OrderListCreateView(APIView):
                 )
                 if not success:
                     raise ValueError("External grocery order submission failed")
-
-                # Step 4: confirm the order to deduct money from central system
-                confirm_success = confirm_order_delivery(order.order_id)
-                if not confirm_success:
-                    raise ValueError("Failed to confirm order with central system")
         except ValueError:
             return APIResponse.error(
                 message="Unable to submit order to the external grocery system. Please try again later.",
@@ -266,6 +262,17 @@ class AdminOrderDetailView(APIView):
         if new_status == "rejected":
             if order.status != "pending":
                 return APIResponse.error(message="Only pending orders can be rejected")
+
+            reject_success = reject_grocery_order(
+                order.user.microsoft_access_token,
+                order.order_id,
+            )
+            if not reject_success:
+                return APIResponse.error(
+                    message="Failed to reject order with central system",
+                    status_code=503,
+                )
+
             order.status = "rejected"
             order.reject_note = serializer.validated_data["reject_note"]
             order.save()

@@ -3,28 +3,29 @@ from django.conf import settings
 
 ELIGIBILITY_URL = "https://erp.betopiagroup.com/grocery-api/eligibility/"
 GROCERY_ORDER_URL = "https://erp.betopiagroup.com/grocery-api/order/"
+REJECT_ORDER_URL = "https://erp.betopiagroup.com/grocery-api/order/reject"
 SHOPPING_REQUEST_URL = "https://erp.betopiagroup.com/advance-salary/shoppingrequest/"
 
 
-def get_eligible_amount(email):
+def get_eligible_amount(access_token):
     """
     Hit central eligibility API to get the user's eligible shopping balance.
+    Uses the user's microsoft_access_token for authentication.
     Returns the eligible_money as float, or None if the call fails.
     Block order placement on failure - critical for financial safety.
     """
-    if not email:
+    if not access_token:
         return None
 
-    payload = {"email": email}
     headers = {
-        "X-API-Key": settings.GROCERY_ELIGIBILITY_API_KEY,
+        "Authorization": f"Bearer {access_token}",
         "Content-Type": "application/json",
     }
 
     try:
         response = requests.post(
             ELIGIBILITY_URL,
-            json=payload,
+            json={},
             headers=headers,
             timeout=10,
         )
@@ -39,13 +40,14 @@ def get_eligible_amount(email):
 
 
 def post_grocery_order(
-    email, amount, product_name, order_id, date_time=None, funding_source="bank"
+    access_token, amount, product_name, order_id, date_time=None, funding_source="bank"
 ):
     """
     Submit the new grocery order to the central ERP grocery API.
+    Uses the user's microsoft_access_token for authentication.
     Returns True only if the response explicitly has success=true.
     """
-    if not email:
+    if not access_token:
         return False
 
     from django.utils import timezone
@@ -54,7 +56,6 @@ def post_grocery_order(
         date_time = timezone.now().strftime("%Y-%m-%dT%H:%M:%S")
 
     payload = {
-        "email": email,
         "amount": float(amount),
         "product_name": product_name,
         "order_id": order_id,
@@ -62,13 +63,42 @@ def post_grocery_order(
         "funding_source": funding_source,
     }
     headers = {
-        "X-API-Key": settings.GROCERY_ELIGIBILITY_API_KEY,
+        "Authorization": f"Bearer {access_token}",
         "Content-Type": "application/json",
     }
 
     try:
         response = requests.post(
             GROCERY_ORDER_URL,
+            json=payload,
+            headers=headers,
+            timeout=10,
+        )
+        if response.status_code != 200:
+            return False
+        data = response.json()
+        return data.get("success") is True
+    except (requests.RequestException, ValueError):
+        return False
+
+
+def reject_grocery_order(access_token, order_id):
+    """
+    Submit a reject request to the central ERP grocery API.
+    Returns True only if the central API explicitly returns success=true.
+    """
+    if not access_token or not order_id:
+        return False
+
+    payload = {"order_id": order_id}
+    headers = {
+        "Authorization": f"Bearer {access_token}",
+        "Content-Type": "application/json",
+    }
+
+    try:
+        response = requests.post(
+            REJECT_ORDER_URL,
             json=payload,
             headers=headers,
             timeout=10,
