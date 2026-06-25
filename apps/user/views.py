@@ -1,6 +1,7 @@
 import logging
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
+from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from rest_framework.views import APIView
 from rest_framework.throttling import UserRateThrottle, AnonRateThrottle
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -20,6 +21,7 @@ logger = logging.getLogger(__name__)
 
 
 class UserProfileView(APIView):
+    parser_classes = [MultiPartParser, FormParser, JSONParser]
     throttle_classes = [AnonRateThrottle, UserRateThrottle]
 
     def _get_payload(self, request):

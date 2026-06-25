@@ -319,7 +319,7 @@ class ProductListCreateView(APIView):
 class ProductDetailView(APIView):
     """Retrieve, update or delete a product."""
 
-    permission_classes = [IsAuthenticatedOrReadOnly]
+    permission_classes = [IsAdminOrReadOnly]
     parser_classes = [MultiPartParser, FormParser, JSONParser]
 
     def get_object(self, slug):

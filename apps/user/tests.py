@@ -1,5 +1,7 @@
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
 from django.urls import reverse
+from rest_framework_simplejwt.tokens import AccessToken
 
 from apps.user.models import UserProfile
 
@@ -32,13 +34,16 @@ class UserProfileAPITest(TestCase):
 
     def test_update_profile_with_post(self):
         UserProfile.objects.create(
+            uid="user-27",
             employee_id="27",
             email="old@example.com",
             company="Old Company",
             access_token="old-token",
         )
 
-        token = "new-token"
+        token = AccessToken()
+        token["uid"] = "user-27"
+        token["email"] = "old@example.com"
         response = self.client.post(
             reverse("user-profile"),
             data={
@@ -59,7 +64,42 @@ class UserProfileAPITest(TestCase):
         profile = UserProfile.objects.get(employee_id="27")
         self.assertEqual(profile.email, "updated@example.com")
         self.assertEqual(profile.company, "Join Venture AI")
-        self.assertEqual(profile.access_token, token)
+        self.assertEqual(profile.access_token, "old-token")
+
+    def test_update_profile_with_multipart_avatar(self):
+        profile = UserProfile.objects.create(
+            uid="user-27",
+            employee_id="27",
+            email="old@example.com",
+            company="Old Company",
+            access_token="old-token",
+        )
+
+        token = AccessToken()
+        token["uid"] = profile.uid
+        token["email"] = profile.email
+
+        avatar_file = SimpleUploadedFile(
+            "avatar.jpg",
+            b"fake-image-content",
+            content_type="image/jpeg",
+        )
+
+        response = self.client.post(
+            reverse("user-profile"),
+            data={
+                "employee_id": "27",
+                "email": "old@example.com",
+                "company": "Old Company",
+                "avatar": avatar_file,
+            },
+            HTTP_AUTHORIZATION=f"Bearer {token}",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        profile.refresh_from_db()
+        self.assertTrue(profile.avatar.name)
+        self.assertTrue(profile.avatar.name.endswith("avatar.jpg"))
 
     def test_get_profile_by_access_token(self):
         token = "test-token"
