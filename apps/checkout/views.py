@@ -287,7 +287,10 @@ class AdminOrderDetailView(APIView):
                 return APIResponse.error(
                     message="Only accepted orders can be marked as delivered"
                 )
-            success = confirm_order_delivery(order.order_id)
+            success = confirm_order_delivery(
+                order.user.microsoft_access_token,
+                order.order_id,
+            )
             if not success:
                 return APIResponse.error(
                     message="Failed to confirm delivery with central system",

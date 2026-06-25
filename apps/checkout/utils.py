@@ -111,24 +111,25 @@ def reject_grocery_order(access_token, order_id):
         return False
 
 
-def confirm_order_delivery(order_id):
+def confirm_order_delivery(access_token, order_id):
     """
     Hit central order confirmation API to mark order as delivered.
     Deducts money and changes status to approved.
+    Uses the user's microsoft_access_token for authentication.
     Returns True only if the response explicitly has success=true.
     """
-    if not order_id:
+    if not access_token or not order_id:
         return False
 
     payload = {"order_id": order_id}
     headers = {
-        "X-API-Key": settings.GROCERY_ELIGIBILITY_API_KEY,
+        "Authorization": f"Bearer {access_token}",
         "Content-Type": "application/json",
     }
 
     try:
         response = requests.post(
-            "https://erp.betopiagroup.com/grocery-api/order/confirm/",
+            "https://erp.betopiagroup.com/grocery-api/order/confirm",
             json=payload,
             headers=headers,
             timeout=10,
