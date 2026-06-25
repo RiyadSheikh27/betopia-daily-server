@@ -5,7 +5,7 @@ from .utils import decode_jwt_payload, get_token_from_request
 
 
 def _get_profile_from_request(request) -> UserProfile | None:
-    """ Resolve the UserProfile from the JWT in the request."""
+    """Resolve the UserProfile from the JWT in the request."""
     token = get_token_from_request(request)
     if not token:
         return None
@@ -14,11 +14,21 @@ def _get_profile_from_request(request) -> UserProfile | None:
     if not payload:
         return None
 
-    return UserProfile.objects.filter(employee_id=payload["uid"]).first()
+    uid = payload["uid"]
+    profile = UserProfile.objects.filter(uid=uid).first()
+    if profile is not None:
+        return profile
+
+    # fallback when tokens still carry a numeric employee_id as uid
+    try:
+        employee_id = int(uid)
+    except (TypeError, ValueError):
+        return None
+    return UserProfile.objects.filter(employee_id=employee_id).first()
 
 
 class IsAuthenticated(BasePermission):
-    """ Allow access only to requests with a valid, non-expired JWT. """
+    """Allow access only to requests with a valid, non-expired JWT."""
 
     message = "Authentication required."
 
