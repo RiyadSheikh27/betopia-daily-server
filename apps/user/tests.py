@@ -100,7 +100,85 @@ class UserProfileAPITest(TestCase):
         self.assertEqual(response.status_code, 200)
         profile.refresh_from_db()
         self.assertTrue(profile.avatar.name)
-        self.assertTrue(profile.avatar.name.endswith("avatar.jpg"))
+        self.assertIn("avatar", profile.avatar.name)
+        self.assertTrue(profile.avatar.name.endswith(".jpg"))
+
+    def test_update_profile_with_profile_avatar_alias(self):
+        profile = UserProfile.objects.create(
+            uid="user-27",
+            employee_id="27",
+            email="old@example.com",
+            company="Old Company",
+            access_token="old-token",
+        )
+
+        token = AccessToken()
+        token["uid"] = profile.uid
+        token["email"] = profile.email
+
+        avatar_file = SimpleUploadedFile(
+            "avatar.jpg",
+            b"fake-image-content",
+            content_type="image/jpeg",
+        )
+
+        response = self.client.post(
+            reverse("user-profile"),
+            data={
+                "employee_id": "27",
+                "email": "old@example.com",
+                "company": "Old Company",
+                "profile_avatar": avatar_file,
+            },
+            HTTP_AUTHORIZATION=f"Bearer {token}",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        profile.refresh_from_db()
+        self.assertTrue(profile.avatar.name)
+        self.assertIn("avatar", profile.avatar.name)
+        self.assertTrue(profile.avatar.name.endswith(".jpg"))
+
+    def test_update_profile_with_same_filename_avatar_does_not_rewrite(self):
+        profile = UserProfile.objects.create(
+            uid="user-27",
+            employee_id="27",
+            email="old@example.com",
+            company="Old Company",
+            access_token="old-token",
+        )
+
+        profile.avatar.name = "users/avatars/avatar.jpg"
+        profile.save(update_fields=["avatar"])
+
+        token = AccessToken()
+        token["uid"] = profile.uid
+        token["email"] = profile.email
+
+        avatar_file = SimpleUploadedFile(
+            "avatar.jpg",
+            b"fake-image-content",
+            content_type="image/jpeg",
+        )
+
+        response = self.client.post(
+            reverse("user-profile"),
+            data={
+                "employee_id": "27",
+                "email": "old@example.com",
+                "company": "Old Company",
+                "profile_avatar": avatar_file,
+            },
+            HTTP_AUTHORIZATION=f"Bearer {token}",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.json().get("message"),
+            "No changes detected. Profile remains unchanged.",
+        )
+        profile.refresh_from_db()
+        self.assertEqual(profile.avatar.name, "users/avatars/avatar.jpg")
 
     def test_get_profile_by_access_token(self):
         token = "test-token"

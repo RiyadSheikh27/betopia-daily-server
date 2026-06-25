@@ -17,6 +17,7 @@ class UserProfile(models.Model):
     avatar = models.ImageField(upload_to="users/avatars/", blank=True, null=True)
     phone = models.CharField(max_length=20, blank=True, null=True)
     access_token = models.TextField(blank=True, null=True)
+    microsoft_access_token = models.TextField(blank=True, null=True)
     role = models.CharField(max_length=20, choices=ROLE_CHOICES, default="user")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

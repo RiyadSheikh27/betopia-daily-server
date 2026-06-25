@@ -42,6 +42,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
             "avatar",
             "phone",
             "role",
+            "microsoft_access_token",
             "created_at",
             "updated_at",
         ]
@@ -49,6 +50,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
         extra_kwargs = {
             "employee_id": {"validators": []},
             "uid": {"validators": []},
+            "microsoft_access_token": {"write_only": True},
         }
 
     def get_avatar(self, obj):

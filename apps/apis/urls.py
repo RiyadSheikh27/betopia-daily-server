@@ -72,6 +72,10 @@ product_urlpatterns = [
     ),
     # User profile endpoint
     path("profile/", UserProfileView.as_view(), name="user-profile"),
+    # Legacy/client support for profile image upload route
+    path(
+        "upload-profile-image/", UserProfileView.as_view(), name="upload-profile-image"
+    ),
 ]
 
 

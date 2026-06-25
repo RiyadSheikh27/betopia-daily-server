@@ -1,4 +1,5 @@
 import logging
+import os
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
@@ -58,6 +59,11 @@ class UserProfileView(APIView):
             return error
 
         employee_id = request.data.get("employee_id")
+        if employee_id is not None and employee_id != "":
+            try:
+                employee_id = int(employee_id)
+            except (TypeError, ValueError):
+                pass
 
         # uid always comes from JWT — user cannot spoof it
         uid = payload["uid"]
@@ -90,16 +96,19 @@ class UserProfileView(APIView):
                 "company_address",
                 "phone",
                 "access_token",
+                "microsoft_access_token",
             ):
                 new_value = request.data.get(field_name)
                 if new_value is not None and getattr(profile, field_name) != new_value:
                     setattr(profile, field_name, new_value)
                     updated = True
 
-            avatar = request.FILES.get("avatar")
+            avatar = request.FILES.get("avatar") or request.FILES.get("profile_avatar")
             if avatar is not None:
-                current_avatar_name = profile.avatar.name if profile.avatar else None
-                if current_avatar_name != avatar.name:
+                current_avatar_basename = (
+                    os.path.basename(profile.avatar.name) if profile.avatar else None
+                )
+                if current_avatar_basename != avatar.name:
                     profile.avatar = avatar
                     updated = True
 
@@ -114,12 +123,16 @@ class UserProfileView(APIView):
                 message=message,
             )
 
+        avatar = request.FILES.get("avatar") or request.FILES.get("profile_avatar")
         data = request.data.copy()
         data["uid"] = uid
         serializer = UserProfileSerializer(data=data, context={"request": request})
         if not serializer.is_valid():
             return APIResponse.error(errors=serializer.errors, status_code=400)
-        serializer.save()
+        save_kwargs = {}
+        if avatar is not None:
+            save_kwargs["avatar"] = avatar
+        serializer.save(**save_kwargs)
         return APIResponse.success(
             data=serializer.data,
             message="Profile created successfully.",
@@ -189,6 +202,8 @@ class SSOLoginView(APIView):
 
             if profile.access_token != ms_token:
                 profile.access_token = ms_token
+            if profile.microsoft_access_token != ms_token:
+                profile.microsoft_access_token = ms_token
                 updated = True
 
             if updated:
@@ -200,6 +215,7 @@ class SSOLoginView(APIView):
                 full_name=display_name,
                 email=email,
                 access_token=ms_token,
+                microsoft_access_token=ms_token,
             )
             logger.info("SSO profile created for %s", email)
 
