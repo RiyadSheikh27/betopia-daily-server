@@ -1,6 +1,7 @@
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
 from django.urls import reverse
+from unittest.mock import patch
 from rest_framework_simplejwt.tokens import AccessToken
 
 from apps.user.models import UserProfile
@@ -126,3 +127,24 @@ class UserProfileAPITest(TestCase):
             response.json().get("message"),
             "Unauthenticated. Access token is required.",
         )
+
+    @patch("apps.user.views.fetch_graph_profile")
+    @patch("apps.user.views.verify_microsoft_token")
+    def test_sso_login_allows_public_post(self, mock_verify, mock_fetch_graph):
+        mock_verify.return_value = {
+            "oid": "user-27",
+            "preferred_username": "test@example.com",
+            "email": "test@example.com",
+            "name": "Test User",
+        }
+        mock_fetch_graph.return_value = {"displayName": "Test User"}
+
+        response = self.client.post(
+            reverse("sso-login"),
+            data={"access_token": "fake-token"},
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("access_token", response.json().get("data", {}))
+        self.assertIn("refresh_token", response.json().get("data", {}))

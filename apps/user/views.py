@@ -130,6 +130,9 @@ class UserProfileView(APIView):
 class SSOLoginView(APIView):
     """Verify Microsoft access or ID token via JWKS/Graph and issue our own JWT."""
 
+    authentication_classes = []
+    permission_classes = []
+
     def post(self, request):
         serializer = SSOLoginSerializer(data=request.data)
         if not serializer.is_valid():
