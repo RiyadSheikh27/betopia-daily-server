@@ -79,9 +79,9 @@ class OrderListCreateView(APIView):
             return APIResponse.error(message="Cart is empty")
 
         # Check stock validity for all items before placing the order
-        for item in cart.items.all():
-            if not item.product.in_stock:
-                return APIResponse.error(message=f"{item.product.name} is out of stock")
+        out_of_stock = [item.product.name for item in cart.items.all() if not item.product.in_stock]
+        if out_of_stock:
+            return APIResponse.error(message=f"The following items are out of stock: {', '.join(out_of_stock)}")
 
         order_total = sum(
             item.product.discounted_price * item.quantity for item in cart.items.all()
@@ -108,6 +108,11 @@ class OrderListCreateView(APIView):
 
         try:
             with transaction.atomic():
+                # Re-check stock inside the transaction to avoid race conditions
+                out_of_stock_after_lock = [item.product.name for item in cart.items.all() if not item.product.in_stock]
+                if out_of_stock_after_lock:
+                    return APIResponse.error(message=f"The following items became out of stock: {', '.join(out_of_stock_after_lock)}")
+
                 order = Order.objects.create(
                     user=profile,
                     company=profile.company,

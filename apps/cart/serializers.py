@@ -7,6 +7,7 @@ class CartItemSerializer(serializers.ModelSerializer):
     name = serializers.CharField(source="product.name", read_only=True)
     slug = serializers.CharField(source="product.slug", read_only=True)
     unit = serializers.CharField(source="product.unit", read_only=True)
+    in_stock = serializers.BooleanField(source="product.in_stock", read_only=True)
     price = serializers.DecimalField(
         source="product.discounted_price",
         max_digits=10,
@@ -26,6 +27,7 @@ class CartItemSerializer(serializers.ModelSerializer):
             "id",
             "name",
             "slug",
+            "in_stock",
             "unit",
             "image",
             "price",

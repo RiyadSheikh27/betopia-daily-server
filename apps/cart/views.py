@@ -113,6 +113,12 @@ class CartItemUpdateView(APIView):
         except CartItem.DoesNotExist:
             return APIResponse.error(message="Cart item not found", status_code=404)
 
+        # Prevent updating quantity for out-of-stock products
+        if not item.product.in_stock:
+            return APIResponse.error(
+                message="Cannot update quantity since the product is not in stock"
+            )
+
         item.quantity = quantity
         item.save()
 
